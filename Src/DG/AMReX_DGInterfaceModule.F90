@@ -14,7 +14,9 @@ MODULE AMReX_DGInterfaceModule
   INTERFACE DGInterface
 
     SUBROUTINE amrex_fi_initializemeshrefinement_dg &
-      ( nNodes, ProjectionMatrix, WeightsX1, WeightsX2, WeightsX3, &
+      ( nNodes, &
+        ProjectionMatrix, ProjectionMatrixCGtoFine, ProjectionMatrixCGtoCoarse, &
+        WeightsX1, WeightsX2, WeightsX3, &
         LX_X1_Refined_Packed, &
         LX_X2_Refined_Packed, &
         LX_X3_Refined_Packed, &
@@ -25,6 +27,8 @@ MODULE AMReX_DGInterfaceModule
        IMPLICIT NONE
        INTEGER(c_int), INTENT(in) :: nNodes(*)
        REAL(DP)      , INTENT(in) :: ProjectionMatrix(*)
+       REAL(DP)      , INTENT(in) :: ProjectionMatrixCGtoFine(*)
+       REAL(DP)      , INTENT(in) :: ProjectionMatrixCGtoCoarse(*)
        REAL(DP)      , INTENT(in) :: WeightsX1(*), WeightsX2(*), WeightsX3(*)
        REAL(DP)      , INTENT(in) :: LX_X1_Refined_Packed(*), &
                                      LX_X2_Refined_Packed(*), &
@@ -47,13 +51,17 @@ CONTAINS
 
 
   SUBROUTINE amrex_InitializeMeshRefinement_DG &
-    ( nNodes, ProjectionMatrix, WeightsX1, WeightsX2, WeightsX3, &
+    ( nNodes, &
+      ProjectionMatrix, ProjectionMatrixCGtoFine, ProjectionMatrixCGtoCoarse, &
+      WeightsX1, WeightsX2, WeightsX3, &
       LX_X1_Refined_Packed, LX_X2_Refined_Packed, LX_X3_Refined_Packed, &
       LX_X1_Up_1D, LX_X1_Dn_1D, &
       LX_X2_Up_1D, LX_X2_Dn_1D, &
       LX_X3_Up_1D, LX_X3_Dn_1D, iGF_SqrtGm )
     INTEGER , INTENT(in) :: nNodes(*), iGF_SqrtGm
     REAL(DP), INTENT(in) :: ProjectionMatrix(*)
+    REAL(DP), INTENT(in) :: ProjectionMatrixCGtoFine(*)
+    REAL(DP), INTENT(in) :: ProjectionMatrixCGtoCoarse(*)
     REAL(DP), INTENT(in) :: WeightsX1(*), WeightsX2(*), WeightsX3(*)
     REAL(DP), INTENT(in) :: LX_X1_Refined_Packed(*), &
                             LX_X2_Refined_Packed(*), &
@@ -63,7 +71,8 @@ CONTAINS
                             LX_X3_Up_1D(*), LX_X3_Dn_1D(*)
 
     CALL amrex_fi_initializemeshrefinement_dg &
-           ( nNodes, ProjectionMatrix, &
+           ( nNodes, &
+             ProjectionMatrix, ProjectionMatrixCGtoFine, ProjectionMatrixCGtoCoarse, &
              WeightsX1, WeightsX2, WeightsX3, &
              LX_X1_Refined_Packed, &
              LX_X2_Refined_Packed, &

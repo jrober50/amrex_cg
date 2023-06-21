@@ -31,6 +31,9 @@ extern Real * WeightsX_q;
 extern Real *** ProjectionMatrix;
 extern Real *** ProjectionMatrix_T;
 
+extern Real *** ProjectionMatrixCGtoFine;
+extern Real *** ProjectionMatrixCGtoCoarse;
+
 extern Real *** LX_X1;
 extern Real *** LX_X2;
 extern Real *** LX_X3;

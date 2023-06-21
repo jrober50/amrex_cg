@@ -478,6 +478,93 @@ namespace amrex
     }
 
 
+
+// ***************************************************************************
+
+    // Average fine nodal CG-based MultiFab onto crse nodal DG-based MultiFab.
+    // We do NOT assume that the coarse layout is a coarsened version
+    // of the fine layout.
+    void average_down_cg
+           ( const MultiFab& S_fine, MultiFab& S_crse,
+             const Geometry& fgeom, const Geometry& cgeom,
+             int scomp, int ncomp, int rr )
+    {
+         average_down_cg
+           (S_fine,S_crse,fgeom,cgeom,scomp,ncomp,rr*IntVect::TheUnitVector());
+    }
+
+    void average_down_cg
+           ( const MultiFab& S_fine, MultiFab& S_crse,
+             const Geometry& fgeom, const Geometry& cgeom,
+             int scomp, int ncomp, const IntVect& ratio)
+    {
+        amrex::ignore_unused(fgeom,cgeom);
+
+        BL_PROFILE("amrex::average_down_dg");
+
+        if (S_fine.is_nodal() || S_crse.is_nodal())
+        {
+            amrex::Error("Can't use amrex::average_down for nodal MultiFab!");
+        }
+
+//#if (AMREX_SPACEDIM == 3)
+//        amrex::average_down(S_fine, S_crse, scomp, ncomp, ratio);
+//        return;
+//#else
+
+        AMREX_ASSERT(S_crse.nComp() == S_fine.nComp());
+
+        //
+        // Coarsen() the fine stuff on processors owning the fine data.
+        //
+        const BoxArray& fine_BA = S_fine.boxArray();
+        const DistributionMapping& fine_dm = S_fine.DistributionMap();
+        BoxArray crse_S_fine_BA = fine_BA;
+        crse_S_fine_BA.coarsen(ratio);
+
+        MultiFab crse_S_fine
+          (crse_S_fine_BA,fine_dm,ncomp,0,MFInfo(),FArrayBoxFactory());
+
+#ifdef AMREX_USE_GPU
+        if (Gpu::inLaunchRegion() && crse_S_fine.isFusingCandidate()) {
+            auto const& crsema = crse_S_fine.arrays();
+            auto const& finema = S_fine.const_arrays();
+            ParallelFor(crse_S_fine, IntVect(0), ncomp,
+            [=] AMREX_GPU_DEVICE (int box_no, int i, int j, int k, int n) noexcept
+            {
+                amrex_avgdown_cg(i,j,k,n,crsema[box_no],finema[box_no],ratio);
+            });
+            Gpu::streamSynchronize();
+        } else
+#endif
+        {
+#ifdef AMREX_USE_OMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+            for (MFIter mfi(crse_S_fine,TilingIfNotGPU()); mfi.isValid(); ++mfi)
+            {
+                //  NOTE: The tilebox is defined at the coarse level.
+                const Box& bx = mfi.tilebox();
+                Array4<Real> const& crsearr = crse_S_fine.array(mfi);
+                Array4<Real const> const& finearr = S_fine.const_array(mfi);
+                AMREX_HOST_DEVICE_PARALLEL_FOR_3D(bx, i, j, k,
+                {
+                    amrex_avgdown_cg(i,j,k,ncomp,crsearr,finearr,ratio);
+                });
+            }
+        }
+
+        S_crse.ParallelCopy(crse_S_fine,0,scomp,ncomp);
+//#endif
+   }
+
+// ***************************************************************************
+
+
+
+
+
+
     void sum_fine_to_coarse(const MultiFab& S_fine, MultiFab& S_crse,
                             int scomp, int ncomp, const IntVect& ratio,
                             const Geometry& cgeom, const Geometry& /*fgeom*/)

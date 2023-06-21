@@ -32,6 +32,9 @@ Real * WeightsX_q  = NULL;
 Real *** ProjectionMatrix   = NULL;
 Real *** ProjectionMatrix_T = NULL;
 
+Real *** ProjectionMatrixCGtoFine   = NULL;
+Real *** ProjectionMatrixCGtoCoarse = NULL;
+
 Real *** LX_X1 = NULL;
 Real *** LX_X2 = NULL;
 Real *** LX_X3 = NULL;
@@ -59,6 +62,8 @@ Real * WeightsX_X3_H          = NULL;
 Real * WeightsX_q_H           = NULL;
 Real *** ProjectionMatrix_H   = NULL;
 Real *** ProjectionMatrix_T_H = NULL;
+Real *** ProjectionMatrixCGtoFine_H   = NULL;
+Real *** ProjectionMatrixCGtoCoarse_H = NULL;
 Real *** LX_X1_H              = NULL;
 Real *** LX_X2_H              = NULL;
 Real *** LX_X3_H              = NULL;
@@ -111,6 +116,12 @@ void InitializeMeshRefinement_DG
                                          ProjectionMatrix );
     AllocateArray( nFineV, nDOFX, nDOFX, ProjectionMatrix_T_H,
                                          ProjectionMatrix_T );
+                                         
+    AllocateArray( nFineV, nDOFX, nDOFX, ProjectionMatrixCGtoFine_H,
+                                         ProjectionMatrixCGtoFine   );
+    AllocateArray( nFineV, nDOFX, nDOFX, ProjectionMatrixCGtoCoarse_H,
+                                         ProjectionMatrixCGtoCoarse );
+    
 
     AllocateArray( nDOFX_X1, nFineF, nDOFX_X1, LX_X1_H, LX_X1 );
     AllocateArray( nDOFX_X2, nFineF, nDOFX_X2, LX_X2_H, LX_X2 );
@@ -351,6 +362,11 @@ void FinalizeMeshRefinement_DG()
                                     ProjectionMatrix_T   );
     DeallocateArray( nFineV, nDOFX, ProjectionMatrix_H,
                                     ProjectionMatrix     );
+                                    
+    DeallocateArray( nFineV, nDOFX, ProjectionMatrixtoFine_H,
+                                    ProjectionMatrixtoFine     );
+    DeallocateArray( nFineV, nDOFX, ProjectionMatrixtoCoarse_H,
+                                    ProjectionMatrixtoCoarse   );
     DeallocateArray( WeightsX_q_H, WeightsX_q );
     DeallocateArray( WeightsX_X3_H, WeightsX_X3 );
     DeallocateArray( WeightsX_X2_H, WeightsX_X2 );

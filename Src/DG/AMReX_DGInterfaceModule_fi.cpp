@@ -9,7 +9,8 @@ using namespace DG;
 extern "C"
 {
   void amrex_fi_initializemeshrefinement_dg
-    ( int nN[], Real ProjMatrix[],
+    ( int nN[],
+      Real ProjMatrix[], Real ProjMatrixCGtoFine[], Real ProjMatrixCGtoCoarse[],
       Real WeightsX1[], Real WeightsX2[], Real WeightsX3[],
       Real LX_X1_Refined_Packed[],
       Real LX_X2_Refined_Packed[],
@@ -19,7 +20,8 @@ extern "C"
       Real LX_X3_Up_1D[], Real LX_X3_Dn_1D[], int iGF_SqtGm )
   {
     InitializeMeshRefinement_DG
-      ( nN, ProjMatrix,
+      ( nN,
+        ProjMatrix, ProjMatrixCGtoFine, ProjMatrixCGtoCoarse, 
         WeightsX1, WeightsX2, WeightsX3,
         LX_X1_Refined_Packed, LX_X2_Refined_Packed, LX_X3_Refined_Packed,
         LX_X1_Up_1D, LX_X1_Dn_1D,

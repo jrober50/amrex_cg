@@ -19,6 +19,16 @@ extern "C"
         amrex::average_down_dg
           ( *S_fine, *S_crse, *fgeom, *cgeom, scomp, ncomp, rr );
     }
+    
+    void amrex_fi_average_down_cg
+           ( const MultiFab* S_fine, MultiFab* S_crse,
+             const Geometry* fgeom, const Geometry* cgeom,
+             int scomp, int ncomp, int rr )
+    {
+        amrex::average_down_cg
+          ( *S_fine, *S_crse, *fgeom, *cgeom, scomp, ncomp, rr );
+    }
+
 
     void amrex_fi_average_cellcenter_to_face (MultiFab* fc[], const MultiFab* cc, const Geometry* geom)
     {

@@ -24,6 +24,8 @@ namespace amrex {
  *
  * DGInterp only works with ref ratio of 2. Not tested for GPU
  *
+ * CGInterp is copy of DGInterp
+ *
  * FaceDivFree works in 2D and 3D on cpu and gpu.
  * The algorithm is restricted to ref ratio of 2.
  */
@@ -42,6 +44,7 @@ CellConservativeQuartic   quartic_interp;
 CellBilinear              cell_bilinear_interp;
 CellQuadratic             quadratic_interp;
 DGInterp                  dg_interp;
+CGInterp                  cg_interp;
 CellQuartic               cell_quartic_interp;
 
 Box
@@ -712,6 +715,8 @@ PCInterp::interp (const FArrayBox& crse,
     });
 }
 
+DGInterp::~DGInterp () {}
+
 Box
 DGInterp::CoarseBox (const Box& fine,
                            int        ratio)
@@ -752,6 +757,53 @@ DGInterp::interp (const FArrayBox& crse,
           (tbx,finearr,fine_comp,ncomp,crsearr,crse_comp,ratio);
     });
 }
+
+
+
+CGInterp::~CGInterp () {}
+
+Box
+CGInterp::CoarseBox (const Box& fine,
+                           int        ratio)
+{
+    return amrex::coarsen(fine,ratio);
+}
+
+Box
+CGInterp::CoarseBox (const Box&     fine,
+                           const IntVect& ratio)
+{
+    return amrex::coarsen(fine,ratio);
+}
+
+void
+CGInterp::interp (const FArrayBox& crse,
+                        int              crse_comp,
+                        FArrayBox&       fine,
+                        int              fine_comp,
+                        int              ncomp,
+                        const Box&       fine_region,
+                        const IntVect&   ratio,
+                        const Geometry& /*crse_geom*/,
+                        const Geometry& /*fine_geom*/,
+                        Vector<BCRec> const& /*bcr*/,
+                        int               /*actual_comp*/,
+                        int               /*actual_state*/,
+                        RunOn             runon)
+{
+    BL_PROFILE("CGInterp::interp()");
+
+    Array4<Real const> const& crsearr = crse.const_array();
+    Array4<Real> const& finearr = fine.array();;
+
+    AMREX_LAUNCH_HOST_DEVICE_LAMBDA_FLAG ( runon, fine_region, tbx,
+    {
+        amrex::cginterp_interp
+          (tbx,finearr,fine_comp,ncomp,crsearr,crse_comp,ratio);
+    });
+}
+
+
 
 CellConservativeProtected::CellConservativeProtected ()
     : CellConservativeLinear(true) {}

@@ -94,6 +94,75 @@ dginterp_interp
   } // iField
 } // END void dginterp_interp
 
+
+
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void
+cginterp_interp
+  ( Box const& bx,
+    Array4<Real> const& fine, const int fcomp, const int ncomp,
+    Array4<Real const> const& crse, const int ccomp,
+    IntVect const& ratio) noexcept
+{
+  amrex::ignore_unused( fcomp, ccomp );
+
+  // Get bounds on fine grid
+  const auto loFine = amrex::lbound(bx);
+  const auto hiFine = amrex::ubound(bx);
+
+  // Number of fields in MultiFab
+  int nFields = ncomp / amrex::DG::nDOFX;
+
+  // Index for projection matrix
+  int iProj;
+
+  // Loop over fields
+  for( int iField = 0; iField < nFields; iField++ )
+  {
+    // Loop over fine cells in y-direction
+    for( int jFine = loFine.y; jFine <= hiFine.y; jFine++ )
+    {
+      // Get coarse element corresponding to fine element jFine
+      const int jCrse = amrex::coarsen(jFine,ratio[1]);
+
+      // Loop over fine cells in x-direction
+      for( int iFine = loFine.x; iFine <= hiFine.x; iFine++ )
+      {
+        // Get coarse element corresponding to fine element iFine
+        const int iCrse = amrex::coarsen(iFine,ratio[0]);
+
+        if     ( ( iFine % 2 == 0 ) &
+                 ( jFine % 2 == 0 ) ) { iProj = 0; }
+        else if( ( iFine % 2 != 0 ) &
+                 ( jFine % 2 == 0 ) ) { iProj = 1; }
+        else if( ( iFine % 2 == 0 ) &
+                 ( jFine % 2 != 0 ) ) { iProj = 2; }
+        else                          { iProj = 3; }
+
+        // Loop over DOF of fine element
+        for( int iNX = 0; iNX < amrex::DG::nDOFX; iNX++ )
+        {
+          // Initialize fine data to zero
+          fine(iFine,jFine,0,amrex::DG::nDOFX*iField+iNX) = amrex::DG::Zero;
+
+          // Project coarse data onto fine data
+          for( int jNX = 0; jNX < amrex::DG::nDOFX; jNX++ )
+          {
+            fine(iFine,jFine,0,amrex::DG::nDOFX*iField+iNX)
+              += amrex::DG::ProjectionMatrixCGtoFine[iProj][iNX][jNX]
+                   * crse(iCrse,jCrse,0,amrex::DG::nDOFX*iField+jNX);
+          } // jNX
+
+          fine(iFine,jFine,0,amrex::DG::nDOFX*iField+iNX)
+            /= amrex::DG::WeightsX_q[iNX];
+
+        } // iNX
+      } // iFine
+    } // jFine
+  } // iField
+} // END void dginterp_interp
+
+
+
 namespace {
     constexpr int ix   = 0;
     constexpr int iy   = 1;

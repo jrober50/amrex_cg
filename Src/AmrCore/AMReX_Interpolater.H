@@ -849,13 +849,9 @@ class DGInterp
 public:
 
     /**
-    * \brief Returns coarsened box given fine box and refinement ratio.
-    *
-    * \param fine
-    * \param ratio
+    * \brief The destructor.
     */
-    Box CoarseBox (const Box& fine,
-                   int        ratio) override;
+    virtual ~DGInterp () override;
 
     /**
     * \brief Returns coarsened box given fine box and refinement ratio.
@@ -863,8 +859,17 @@ public:
     * \param fine
     * \param ratio
     */
-    Box CoarseBox (const Box&     fine,
-                   const IntVect& ratio) override;
+    virtual Box CoarseBox (const Box& fine,
+                           int        ratio) override;
+
+    /**
+    * \brief Returns coarsened box given fine box and refinement ratio.
+    *
+    * \param fine
+    * \param ratio
+    */
+    virtual Box CoarseBox (const Box&     fine,
+                           const IntVect& ratio) override;
 
     /**
     * \brief Coarse to fine interpolation in space (Order 2).
@@ -882,20 +887,86 @@ public:
     * \param actual_comp
     * \param actual_state
     */
-    void interp (const FArrayBox& crse,
-                 int              crse_comp,
-                 FArrayBox&       fine,
-                 int              fine_comp,
-                 int              ncomp,
-                 const Box&       fine_region,
-                 const IntVect&   ratio,
-                 const Geometry&  crse_geom,
-                 const Geometry&  fine_geom,
-                 Vector<BCRec> const&  bcr,
-                 int              actual_comp,
-                 int              actual_state,
-                 RunOn            runon) override;
+    virtual void interp (const FArrayBox& crse,
+                         int              crse_comp,
+                         FArrayBox&       fine,
+                         int              fine_comp,
+                         int              ncomp,
+                         const Box&       fine_region,
+                         const IntVect&   ratio,
+                         const Geometry&  crse_geom,
+                         const Geometry&  fine_geom,
+                         Vector<BCRec> const&  bcr,
+                         int              actual_comp,
+                         int              actual_state,
+                         RunOn            gpu_or_cpu) override;
 };
+
+
+/**
+* \brief CG interpolation on nodal data with cell.
+*/
+
+class CGInterp
+    :
+    public Interpolater
+{
+public:
+
+    /**
+    * \brief The destructor.
+    */
+    virtual ~CGInterp () override;
+
+    /**
+    * \brief Returns coarsened box given fine box and refinement ratio.
+    *
+    * \param fine
+    * \param ratio
+    */
+    virtual Box CoarseBox (const Box& fine,
+                           int        ratio) override;
+
+    /**
+    * \brief Returns coarsened box given fine box and refinement ratio.
+    *
+    * \param fine
+    * \param ratio
+    */
+    virtual Box CoarseBox (const Box&     fine,
+                           const IntVect& ratio) override;
+
+    /**
+    * \brief Coarse to fine interpolation in space (Order 2).
+    *
+    * \param crse
+    * \param crse_comp
+    * \param fine
+    * \param fine_comp
+    * \param ncomp
+    * \param fine_region
+    * \param ratio
+    * \param crse_geom
+    * \param fine_geom
+    * \param bcr
+    * \param actual_comp
+    * \param actual_state
+    */
+    virtual void interp (const FArrayBox& crse,
+                         int              crse_comp,
+                         FArrayBox&       fine,
+                         int              fine_comp,
+                         int              ncomp,
+                         const Box&       fine_region,
+                         const IntVect&   ratio,
+                         const Geometry&  crse_geom,
+                         const Geometry&  fine_geom,
+                         Vector<BCRec> const&  bcr,
+                         int              actual_comp,
+                         int              actual_state,
+                         RunOn            gpu_or_cpu) override;
+};
+
 
 //! CONSTRUCT A GLOBAL OBJECT OF EACH VERSION.
 extern AMREX_EXPORT PCInterp                  pc_interp;
@@ -909,6 +980,7 @@ extern AMREX_EXPORT CellConservativeProtected protected_interp;
 extern AMREX_EXPORT CellConservativeQuartic   quartic_interp;
 extern AMREX_EXPORT CellQuadratic             quadratic_interp;
 extern AMREX_EXPORT DGInterp                  dg_interp;
+extern AMREX_EXPORT CGInterp                  cg_interp;
 extern AMREX_EXPORT CellQuartic               cell_quartic_interp;
 
 }

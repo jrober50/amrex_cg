@@ -10,7 +10,7 @@ module amrex_multifabutil_module
 
   public :: amrex_average_down, amrex_average_cellcenter_to_face
 
-  public :: amrex_average_down_dg
+  public :: amrex_average_down_dg, amrex_average_down_cg
 
   interface
      subroutine amrex_fi_average_down (fmf, cmf, fgeom, cgeom, scomp, ncomp, rr) bind(c)
@@ -27,6 +27,14 @@ module amrex_multifabutil_module
        type(c_ptr), value :: fmf, cmf, fgeom, cgeom
        integer(c_int), value :: scomp, ncomp, rr
      end subroutine amrex_fi_average_down_dg
+
+     subroutine amrex_fi_average_down_cg &
+       (fmf, cmf, fgeom, cgeom, scomp, ncomp, rr) bind(c)
+       import
+       implicit none
+       type(c_ptr), value :: fmf, cmf, fgeom, cgeom
+       integer(c_int), value :: scomp, ncomp, rr
+     end subroutine amrex_fi_average_down_cg
 
      subroutine amrex_fi_average_cellcenter_to_face (facemf, ccmf, geom) bind(c)
        import
@@ -57,6 +65,17 @@ contains
     call amrex_fi_average_down_dg &
            (fmf%p, cmf%p, fgeom%p, cgeom%p, scomp-1, ncomp, rr)
   end subroutine amrex_average_down_dg
+
+
+  subroutine amrex_average_down_cg &
+    (fmf, cmf, fgeom, cgeom, scomp, ncomp, rr)
+    type(amrex_multifab), intent(in   ) :: fmf
+    type(amrex_multifab), intent(inout) :: cmf
+    type(amrex_geometry), intent(in) :: fgeom, cgeom
+    integer, intent(in) :: scomp, ncomp, rr
+    call amrex_fi_average_down_cg &
+           (fmf%p, cmf%p, fgeom%p, cgeom%p, scomp-1, ncomp, rr)
+  end subroutine amrex_average_down_cg
 
 
   subroutine amrex_average_cellcenter_to_face (facemf, ccmf, geom)

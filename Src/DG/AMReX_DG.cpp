@@ -6,7 +6,9 @@
 #include <AMReX_REAL.H>
 #include <AMReX_Gpu.H>
 
-namespace amrex::DG
+namespace amrex
+{
+namespace DG
 {
 
 int nFineV;
@@ -21,48 +23,46 @@ int nDOFX_X1;
 int nDOFX_X2;
 int nDOFX_X3;
 
-Real * WeightsX_X1 = nullptr;
-Real * WeightsX_X2 = nullptr;
-Real * WeightsX_X3 = nullptr;
-Real * WeightsX_q  = nullptr;
+Real * WeightsX_X1 = NULL;
+Real * WeightsX_X2 = NULL;
+Real * WeightsX_X3 = NULL;
+Real * WeightsX_q  = NULL;
 
-Real *** ProjectionMatrix   = nullptr;
-Real *** ProjectionMatrix_T = nullptr;
+Real *** ProjectionMatrix   = NULL;
+Real *** ProjectionMatrix_T = NULL;
 
-Real *** LX_X1 = nullptr;
-Real *** LX_X2 = nullptr;
-Real *** LX_X3 = nullptr;
+Real *** ProjectionMatrixCGtoFine   = NULL;
+Real *** ProjectionMatrixCGtoCoarse = NULL;
 
-Real * LX_X1_Up = nullptr;
-Real * LX_X1_Dn = nullptr;
-Real * LX_X2_Up = nullptr;
-Real * LX_X2_Dn = nullptr;
-Real * LX_X3_Up = nullptr;
-Real * LX_X3_Dn = nullptr;
+Real *** LX_X1 = NULL;
+Real *** LX_X2 = NULL;
+Real *** LX_X3 = NULL;
 
-int **  NodeNumberTableX    = nullptr;
-int *** NodeNumberTableX3D  = nullptr;
-int *   NodeNumberTableX_X1 = nullptr;
-int *   NodeNumberTableX_X2 = nullptr;
-int *   NodeNumberTableX_X3 = nullptr;
+Real * LX_X1_Up = NULL;
+Real * LX_X1_Dn = NULL;
+Real * LX_X2_Up = NULL;
+Real * LX_X2_Dn = NULL;
+Real * LX_X3_Up = NULL;
+Real * LX_X3_Dn = NULL;
+
+int **  NodeNumberTableX    = NULL;
+int *** NodeNumberTableX3D  = NULL;
+int *   NodeNumberTableX_X1 = NULL;
+int *   NodeNumberTableX_X2 = NULL;
+int *   NodeNumberTableX_X3 = NULL;
 
 int iGF_SqrtGm;
 
 void InitializeMeshRefinement_DG
-       ( const int N[], const Real ProjMatrix[],
-         const Real WeightsX1[],
-         const Real WeightsX2[],
-         const Real WeightsX3[],
-         const Real LX_X1_Refined_Packed[],
-         const Real LX_X2_Refined_Packed[],
-         const Real LX_X3_Refined_Packed[],
-         const Real LX_X1_Up_1D[],
-         const Real LX_X1_Dn_1D[],
-         const Real LX_X2_Up_1D[],
-         const Real LX_X2_Dn_1D[],
-         const Real LX_X3_Up_1D[],
-         const Real LX_X3_Dn_1D[],
-         const int iGF_SqtGm )
+       ( int N[],
+         Real ProjMatrix[], Real ProjMatrixCGtoFine[], Real ProjMatrixCGtoCoarse[],
+         Real WeightsX1[], Real WeightsX2[], Real WeightsX3[],
+         Real LX_X1_Refined_Packed[],
+         Real LX_X2_Refined_Packed[],
+         Real LX_X3_Refined_Packed[],
+         Real LX_X1_Up_1D[], Real LX_X1_Dn_1D[],
+         Real LX_X2_Up_1D[], Real LX_X2_Dn_1D[],
+         Real LX_X3_Up_1D[], Real LX_X3_Dn_1D[], int iGF_SqtGm )
 {
     int k;
 
@@ -89,6 +89,9 @@ void InitializeMeshRefinement_DG
 
     AllocateArray( nFineV, nDOFX, nDOFX, ProjectionMatrix   );
     AllocateArray( nFineV, nDOFX, nDOFX, ProjectionMatrix_T );
+
+    AllocateArray( nFineV, nDOFX, nDOFX, ProjectionMatrixCGtoFine   );
+    AllocateArray( nFineV, nDOFX, nDOFX, ProjectionMatrixCGtoCoarse );
 
     AllocateArray( nDOFX_X1, nFineF, nDOFX_X1, LX_X1 );
     AllocateArray( nDOFX_X2, nFineF, nDOFX_X2, LX_X2 );
@@ -144,7 +147,16 @@ void InitializeMeshRefinement_DG
         ProjectionMatrix  [iFine][iNX][jNX] = ProjMatrix[k];
         ProjectionMatrix_T[iFine][jNX][iNX] = ProjMatrix[k];
     }}}
-
+    
+    k = -1;
+    for( int iFine = 0; iFine < nFineV; iFine++ ) {
+    for( int jNX   = 0; jNX   < nDOFX; jNX++   ) {
+    for( int iNX   = 0; iNX   < nDOFX; iNX++   ) {
+        k += 1;
+        ProjectionMatrixCGtoFine  [iFine][iNX][jNX] = ProjMatrixCGtoFine[k];
+        ProjectionMatrixCGtoCoarse[iFine][iNX][jNX] = ProjMatrixCGtoCoarse[k];
+    }}}
+    
     k = -1;
     for( int iNX_C = 0; iNX_C < nDOFX_X1; iNX_C++ ) {
     for( int iFn   = 0; iFn   < nFineF  ; iFn++   ) {
@@ -248,6 +260,16 @@ void InitializeMeshRefinement_DG
                       &ProjectionMatrix_T[0]);
 
     amrex::Gpu::copy( amrex::Gpu::hostToDevice,
+                      &ProjectionMatrixCGtoFine[0],
+                      &ProjectionMatrixCGtoFine[nFineV*nDOFX*nDOFX],
+                      &ProjectionMatrixCGtoFine[0]);
+                      
+    amrex::Gpu::copy( amrex::Gpu::hostToDevice,
+                      &ProjectionMatrixCGtoCoarse[0],
+                      &ProjectionMatrixCGtoCoarse[nFineV*nDOFX*nDOFX],
+                      &ProjectionMatrixCGtoCoarse[0]);
+
+    amrex::Gpu::copy( amrex::Gpu::hostToDevice,
                       &LX_X1[0],
                       &LX_X1[nDOFX_X1*nFineF*nDOFX_X1],
                       &LX_X1[0]);
@@ -329,6 +351,8 @@ void FinalizeMeshRefinement_DG()
     DeallocateArray( nDOFX_X1, nFineF, LX_X1 );
     DeallocateArray( nFineV, nDOFX, ProjectionMatrix_T );
     DeallocateArray( nFineV, nDOFX, ProjectionMatrix   );
+    DeallocateArray( nFineV, nDOFX, ProjectionMatrixCGtoFine   );
+    DeallocateArray( nFineV, nDOFX, ProjectionMatrixCGtoCoarse );
     DeallocateArray( WeightsX_q );
     DeallocateArray( WeightsX_X3 );
     DeallocateArray( WeightsX_X2 );
@@ -351,7 +375,7 @@ void DeallocateArray( Real * &A )
 #ifdef AMREX_USE_GPU
     The_Device_Arena() -> free( A );
 #endif
-    delete [] A; A = nullptr;
+    delete [] A; A = NULL;
 }
 void AllocateArray( int n0, int * &A )
 {
@@ -365,7 +389,7 @@ void DeallocateArray( int * &A )
 #ifdef AMREX_USE_GPU
     The_Device_Arena() -> free( A );
 #endif
-    delete [] A; A = nullptr;
+    delete [] A; A = NULL;
 }
 
 void AllocateArray( int n0, int n1, Real ** &A )
@@ -390,9 +414,9 @@ void DeallocateArray( int n0, Real ** &A )
     The_Device_Arena() -> free( A );
 #endif
     for( int i0 = 0; i0 < n0; i0++ ) {
-        delete [] A[i0]; A[i0] = nullptr;
+        delete [] A[i0]; A[i0] = NULL;
     }
-    delete [] A; A = nullptr;
+    delete [] A; A = NULL;
 }
 void AllocateArray( int n0, int n1, int ** &A )
 {
@@ -416,9 +440,9 @@ void DeallocateArray( int n0, int ** &A )
     The_Device_Arena() -> free( A );
 #endif
     for( int i0 = 0; i0 < n0; i0++ ) {
-        delete [] A[i0]; A[i0] = nullptr;
+        delete [] A[i0]; A[i0] = NULL;
     }
-    delete [] A; A = nullptr;
+    delete [] A; A = NULL;
 }
 
 void AllocateArray( int n0, int n1, int n2, Real *** &A )
@@ -455,11 +479,11 @@ void DeallocateArray( int n0, int n1, Real *** &A )
 #endif
     for( int i0 = 0; i0 < n0; i0++ ) {
         for( int i1 = 0; i1 < n1; i1++ ) {
-            delete [] A[i0][i1]; A[i0][i1] = nullptr;
+            delete [] A[i0][i1]; A[i0][i1] = NULL;
         }
-        delete [] A[i0]; A[i0] = nullptr;
+        delete [] A[i0]; A[i0] = NULL;
     }
-    delete [] A; A = nullptr;
+    delete [] A; A = NULL;
 }
 void AllocateArray( int n0, int n1, int n2, int *** &A )
 {
@@ -495,11 +519,12 @@ void DeallocateArray( int n0, int n1, int *** &A )
 #endif
     for( int i0 = 0; i0 < n0; i0++ ) {
         for( int i1 = 0; i1 < n1; i1++ ) {
-            delete [] A[i0][i1]; A[i0][i1] = nullptr;
+            delete [] A[i0][i1]; A[i0][i1] = NULL;
         }
-        delete [] A[i0]; A[i0] = nullptr;
+        delete [] A[i0]; A[i0] = NULL;
     }
-    delete [] A; A = nullptr;
+    delete [] A; A = NULL;
 }
 
-} /* END namespace amrex::DG */
+} /* END namespace DG */
+} /* END namespace amrex */

@@ -3,7 +3,9 @@
 
 #include <AMReX_REAL.H>
 
-namespace amrex::DG
+namespace amrex
+{
+namespace DG
 {
 
 const Real Zero = 0.0;
@@ -29,6 +31,9 @@ extern Real * WeightsX_q;
 extern Real *** ProjectionMatrix;
 extern Real *** ProjectionMatrix_T;
 
+extern Real *** ProjectionMatrixCGtoFine;
+extern Real *** ProjectionMatrixCGtoCoarse;
+
 extern Real *** LX_X1;
 extern Real *** LX_X2;
 extern Real *** LX_X3;
@@ -49,21 +54,15 @@ extern int *   NodeNumberTableX_X3;
 extern int iGF_SqrtGm;
 
 void InitializeMeshRefinement_DG
-       ( const int N[],
-         const Real ProjMatrix[],
-         const Real WeightsX1[],
-         const Real WeightsX2[],
-         const Real WeightsX3[],
-         const Real LX_X1_Refined_Packed[],
-         const Real LX_X2_Refined_Packed[],
-         const Real LX_X3_Refined_Packed[],
-         const Real LX_X1_Up_1D[],
-         const Real LX_X1_Dn_1D[],
-         const Real LX_X2_Up_1D[],
-         const Real LX_X2_Dn_1D[],
-         const Real LX_X3_Up_1D[],
-         const Real LX_X3_Dn_1D[],
-         int iGF_SqtGm );
+       ( int N[],
+         Real ProjMatrix[], Real ProjMatrixCGtoFine[], Real ProjMatrixCGtoCoarse[],
+         Real WeightsX1[], Real WeightsX2[], Real WeightsX3[],
+         Real LX_X1_Refined_Packed[],
+         Real LX_X2_Refined_Packed[],
+         Real LX_X3_Refined_Packed[],
+         Real LX_X1_Up_1D[], Real LX_X1_Dn_1D[],
+         Real LX_X2_Up_1D[], Real LX_X2_Dn_1D[],
+         Real LX_X3_Up_1D[], Real LX_X3_Dn_1D[], int iGF_SqtGm );
 
 void FinalizeMeshRefinement_DG();
 
@@ -82,6 +81,7 @@ void DeallocateArray( int n0, int n1,         Real *** &A );
 void AllocateArray  ( int n0, int n1, int n2, int *** &A );
 void DeallocateArray( int n0, int n1,         int *** &A );
 
-} /* END namespace amrex::DG */
+} /* END namespace DG */
+} /* END namespace amrex */
 
 #endif // AMREX_DG_H_
